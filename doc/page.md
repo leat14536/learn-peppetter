@@ -92,3 +92,14 @@ page.$$(selector)
 Shortcut for `page.mainFrame().$$(selector).`
 
 page.$$eval(selector, pageFunction[, ...args])
+
+* returns `<Promise<Serializable>>` 返回pageFunction 的返回值
+* selector `<string>`
+* pageFunction `<function>`
+* ...args `<...Serializable|ElementHandle>` pageFunction的参数
+
+```const divsCounts = await page.$$eval('div', divs => divs.length);```
+
+此方法会调用document
+
+如果pageFunction 返回一个promise 那么page.$$eval 会等待promise 调用resolve 并返回resolve的值

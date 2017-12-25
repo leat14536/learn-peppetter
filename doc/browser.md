@@ -1,6 +1,6 @@
 # browser
 
-browser实例 通过peppetter.launch 或者 peppetter.connect 获得 注意都是异步获取
+browser实例 通过puppeteer.launch 或者 puppeteer.connect 获得 注意都是异步获取
 
 ```
 const puppeteer = require('puppeteer');
@@ -52,7 +52,7 @@ browser returns<Promise>
 
 browser.disconnect()
 
-* 断开当前browser连接的peppetter, 使当前browser实例不可用
+* 断开当前browser连接的puppeteer, 使当前browser实例不可用
 
 browser.newPage() returns<Promise\<Page>>
 
