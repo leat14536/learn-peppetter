@@ -4,11 +4,8 @@ const puppteer = require('puppeteer');
     const browser = await puppteer.launch()
     const page = await browser.newPage()
     page.on('console', (...args) => console.log('PAGE LOG: ', ...args))
-    await page.goto('https://news.ycombinator.com', { waitUntil: 'networkidle2' })
-    await page.click('a.storylink')
-    const response = await page.waitForNavigation({ waitUntil: 'networkidle2' })
-    console.log(await page.title())
-    console.log(page.url())
+    await page.goto('http://xakj.xa.gov.cn/admin/class1.asp?catid=10')
+    await page.pdf({path: `abs.pdf`})
 
     // console.log(links.join('\n'))
     browser.close()

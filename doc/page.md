@@ -338,11 +338,24 @@ puppeteer.launch().then(async browser => {
 });
 ```
 
+#### page.focus(selector)
 
+* selector `<string>` 只会选中第一个
+* returns: `<Promise>` 选中元素成功时调用resolve 未选中元素则调用reject
 
+#### page.frames()
 
+* returns: `<Array<Frame>` 返回所有page组成的数组
 
+#### page.goBack(options)
 
+* options `<Object>` 跳转携带的参数
+  * waitUntil `<string|Array<string>>` 默认load, 当传入数组时会在所有事件完成后认为导航成功, 参数可选:
+    * load load事件触发时
+    * domcontentloaded DOMContentLoaded事件触发时
+    * networkidle0 网络连接不超过0时 至少500ms
+    * networkidle2 网络连接不超过2时 至少500ms
+* returns: `<Promise<?Response>>`
 
 
 
