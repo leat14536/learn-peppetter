@@ -355,7 +355,177 @@ puppeteer.launch().then(async browser => {
     * domcontentloaded DOMContentLoaded事件触发时
     * networkidle0 网络连接不超过0时 至少500ms
     * networkidle2 网络连接不超过2时 至少500ms
-* returns: `<Promise<?Response>>`
+* returns: `<Promise<?Response>>` 页面返回时resolve, 如果有多个重定向则返回最后一个重定向位置, 如果失败则返回null
+
+#### page.goForward(options)
+* options `<Object>` 跳转的参数
+  * timeout `<number>` 最多的跳转时间单位毫秒, 默认30s, 通过0禁止超时
+  * waitUntil `<string|Array<string>>` 同上
+    * load load事件触发时
+    * domcontentloaded DOMContentLoaded事件触发时
+    * networkidle0 网络连接不超过0时 至少500ms
+    * networkidle2 网络连接不超过2时 至少500ms
+* returns: `<Promise<?Response>>` 页面响应时resolve, 多个重定向则定位最后的位置, 失败则resolve null
+
+从history中跳转下一页
+
+#### page.goto(url, options)
+
+* url `<string>` 包含协议的url -> https://
+* options `<Object>` 跳转的参数
+  * timeout `<number>` 最多的跳转时间单位毫秒, 默认30s, 通过0禁止超时
+  * waitUntil `<string|Array<string>>` 同上
+    * load load事件触发时
+    * domcontentloaded DOMContentLoaded事件触发时
+    * networkidle0 网络连接不超过0时 至少500ms
+    * networkidle2 网络连接不超过2时 至少500ms
+* returns: `<Promise<?Response>>` 请求主体相应时resolve, 重定向则跳转最终位置
+
+page.goto 在下列情况下会出错:
+
+* 无证书
+* url 出错
+* timeout超时
+* 页面load失败
+
+> 如果跳转到 `about:blank` 则resolve null
+
+> 不支持跳转pdf页面
+
+#### page.hover(selector)
+
+* selector `<string>` 会选择第一个选中元素hover
+* returns `<Promise>`
+
+page 会滚动到元素相应的位置 并使用page.mouse 移动到该元素上, 如果没选中元素则reject
+
+#### page.board
+
+* returns: <Keyboard>
+
+#### page.mainFrame()
+
+* returns: `<Frame>` 返回页面主体结构
+
+page 保证导航过程中保持一个页面主体结构
+
+#### page.metrics()
+
+* return `<Promise<Object>>` 页面的度量对象
+  * Timestamp `<number>` 标准时间戳
+  * Documents `<number>` 页面的document数量
+  * Frames `<number>` 页面的帧数.
+  * JSEventListeners `<number>` 页面的事件总数.
+  * Nodes `<number>` dom节点数量.
+  * LayoutCount `<number>` 全部或不分页面布局总数.
+  * RecalcStyleCount `<number>` 样式重新计算总数.
+  * LayoutDuration `<number>` 页面布局时间.
+  * RecalcStyleDuration `<number>` 页面重绘时间.
+  * ScriptDuration `<number>` js执行时间.
+  * TaskDuration `<number>` 浏览器执行所有任务的总时间.
+  * JSHeapUsedSize `<number>` js使用的堆大小.
+  * JSHeapTotalSize `<number>` js堆大小.
+
+#### page.mouse
+
+* returns: `<Mouse>`
+
+#### page.pdf(options)
+
+* options `<Object>`
+  * path `<string>` 存储路径必须是相对路径, 相对于运行时的路径, 如果没有设置路径则不会保存
+  * scale `<number>` 缩放 默认1
+  * displayHeaderFooter `<boolean>` 显示header 和footer 默认false
+  * headerTemplate `<string>` header信息 由以下部分组成 注意格式
+    * date 格式化日期对象
+    * title 文档title
+    * url 文档地址
+    * pageNumber 当前页面数量
+    * totalPages 页面总数
+* footerTemplate `<string>` 同上
+* printBackground `<boolean>` 绘制背景图形, 默认false
+* landscage `<boolean>` 纸张方向默认false
+* formate `<string>` 纸张格式如果设置则优先于width height, 默认Letter
+* width `<string>` 页面width 接受单位
+* height `<string>` 页面height 接受单位
+* margin `<Object>` 页面margin 默认none
+  * top `<string>`
+  * bottom `<string>`
+  * left `<string>`
+  * right `<string>`
+* returns: `<Promise<Buffer>>` pdf的buffer
+
+> 生成pdf仅支持chrome无头模式
+
+生成页面使用css 的print media , 如果使用css的screen css则
+```
+// Generates a PDF with 'screen' media type.
+await page.emulateMedia('screen');
+await page.pdf({path: 'page.pdf'})
+```
+
+width height margin 接受带单位的值, 如果不带单位默认px
+
+All possible units are:
+
+* px - pixel
+* in - inch
+* cm - centimeter
+* mm - millimeter
+
+The format options are:
+
+* Letter: 8.5in x 11in
+* Legal: 8.5in x 14in
+* Tabloid: 11in x 17in
+* Ledger: 17in x 11in
+* A0: 33.1in x 46.8in
+* A1: 23.4in x 33.1in
+* A2: 16.5in x 23.4in
+* A3: 11.7in x 16.5in
+* A4: 8.27in x 11.7in
+* A5: 5.83in x 8.27in
+* A6: 4.13in x 5.83in
+
+#### page.queryObjects(prototypeHandle)
+
+* prototypeHandle `<JSHandle>` 对象原型的引用
+* returns: `<Promise<JSHandle>>` 返回所有当前原形所生成实例组成的数组
+
+```
+// Create a Map object
+await page.evaluate(() => window.map = new Map());
+// Get a handle to the Map object prototype
+const mapPrototype = await page.evaluateHandle(() => Map.prototype);
+// Query all map instances into an array
+const mapInstances = await page.queryObjects(mapPrototype);
+// Count amount of map objects in heap
+const count = await page.evaluate(maps => maps.length, mapInstances);
+await mapInstances.dispose();
+await mapPrototype.dispose();
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
