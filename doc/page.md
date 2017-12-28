@@ -379,7 +379,7 @@ puppeteer.launch().then(async browser => {
     * domcontentloaded DOMContentLoaded事件触发时
     * networkidle0 网络连接不超过0时 至少500ms
     * networkidle2 网络连接不超过2时 至少500ms
-* returns: `<Promise<?Response>>` 请求主体相应时resolve, 重定向则跳转最终位置
+* returns: `<Promise<?Response>>` 请求主体响应时resolve, 重定向则跳转最终位置
 
 page.goto 在下列情况下会出错:
 
@@ -505,26 +505,256 @@ await mapInstances.dispose();
 await mapPrototype.dispose();
 ```
 
+#### page.reload(options)
 
+* options `<Object>` 重新加载携带参数
+  * timeout `<number>` 最多的跳转时间单位毫秒, 默认30s, 通过0禁止超时
+  * waitUntil `<string|Array<string>>` 同上
+    * load load事件触发时
+    * domcontentloaded DOMContentLoaded事件触发时
+    * networkidle0 网络连接不超过0时 至少500ms
+    * networkidle2 网络连接不超过2时 至少500ms
+* returns: `<Promise<?Response>>` 请求主体响应时resolve, 重定向则跳转最终位置
 
+#### page.screenshot([options])
 
+* options `<Object>`
+  * path `<string>` 相对路径, 如果不设置path则不保存
+  * type `<string>` 图片类型, jpeg / png 默认png
+  * quality `<number>` 图片质量 1 - 100, 不适用于png
+  * fullpage `<boolean>` true时获取整个page截图, 默认false
+  * clip `<Object>` 截取部分屏幕 参数如下
+    * x `<number>`
+    * y `<number>`
+    * width `<number>`
+    * height `<number>`
+  * omitBackground `<boolean>` 将白色背景变为透明 默认false
+* returns: `<Promise<Buffer>>` resolve 截取部分二进制流
 
+#### page.select(selector, ...values)
 
+* selector `<string>` selector元素选择器
+* ...values `<...string>` 如果selector 有multiple属性, 则将values 全部设置, 否则只设置第一个值
+* reutrns: `<Promise<Array<string>>>` 返回一成功选择的选项组成的数组
 
+如果成功改变选项则触发selector的change 和input 事件, 如果没选中元素咋报错
 
+#### page.setContent(html)
 
+* html `<string>` 给html设置的标记
+* reurns `<Promise>`
 
+#### page.setCookie(...cookies)
 
+* ...cookies `<...Object>`
+  * name `<string>` required (必填)
+  * value `<string>` required
+  * url `<string>`
+  * domain `<string>`
+  * path `<string>`
+  * expires `<number>` Unix time in seconds.
+  * httpOnly `<boolean>`
+  * secure `<boolean>`
+  * sameSite `<string>` "Strict" or "Lax".
+* returns: `<Promise>`
 
+#### page.setExtraHTTPHeaders(headers)
 
+* headers `<Object>` 在所有页面请求中附加的headers, values必须是string
+* returns: `<Promise>`
 
+这个api不保证header的顺序
 
+#### page.setJavaScriptEnabled(enabled)
 
+* enabled 是否在页面中启用js
+* returns: `<Promise>`
 
+这个值不会影响已经运行的脚本, 将会在下页生效
 
+#### page.setOfflineMode(enabled)
 
+* enabled 设为true时 页面进入离线状态
+* reutrns: `<Promise>`
 
+#### page.setRequestInterception(value)
 
+* value `<boolean>` 是否启用请求拦截
+* returns: `<Promise>`
+
+可以使用如下方法拦截请求 request.abort, request.continue and request.respond
+
+拦截image请求的例子:
+```
+const puppeteer = require('puppeteer');
+
+puppeteer.launch().then(async browser => {
+  const page = await browser.newPage();
+  await page.setRequestInterception(true);
+  page.on('request', interceptedRequest => {
+    if (interceptedRequest.url.endsWith('.png') || interceptedRequest.url.endsWith('.jpg'))
+      interceptedRequest.abort();
+    else
+      interceptedRequest.continue();
+  });
+  await page.goto('https://example.com');
+  await browser.close();
+});
+```
+> 启用拦截请求将禁用页面缓存
+
+#### page.seUserAgent(userAgent)
+
+* userAgent `<string>`
+* returns: `<Promise>` userAgent设置好后调用resolve
+
+#### page.setViewport(viewport)
+
+* viewport `<Object>`
+  * width `<number>` 页面的 width(px)
+  * height `<number>` 页面的 height(px)
+  * deviceScaleFactor `<number>` 指定设备比例 默认1
+  * isMobile `<number>` 是否考虑 `meta viewport`标签, 默认false
+  * hasTouch `<number>` 如果视图支持touch事件, 默认false
+  * isLandscape `<number>` 是否横向模式 默认false
+* returns: `<Promise>`
+
+> 在某些情况下调用会刷新页面, 比如设置了 isMobile或者 hasTouch
+
+在多重页面的情况下, 每个page都有独立的viewport size
+
+#### page.tap(selector)
+
+* selector `<string>`
+* returns: `<Promise>`
+
+通过选择器找到元素, 有必要的话屏幕会滚动到该元素的位置, 然后调用page.touchscreen 点击元素中心, 如果没找到元素则报错
+
+#### page.title()
+
+* returns: `<Promise<string>>` 返回页面title
+
+Shortcut for page.mainFrame().title().
+
+#### page.touchscreen
+
+returns: `<Touchscreen>`
+
+#### page.tracing
+
+returns: `<Tracing>`
+
+#### page.type(selector, text[, options])
+
+* selector `<string>` 键入元素的选择器, 只会选中第一个元素
+* text `<string>` 键盘输入的值
+* options `<Object>`
+  * delay `<number>` 按键之间的间隔时间默认0
+* returns: `<Promise>`
+
+启用keydown, keypress/input, and keyup事件输入每个字符
+
+特殊按键Control or ArrowDown, 需使用 keyboard.press.
+```
+page.type('#mytextarea', 'Hello'); // Types instantly
+page.type('#mytextarea', 'World', {delay: 100}); // Types slower, like a user
+```
+
+#### page.url()
+
+* returns: `<string>`
+
+This is a shortcut for page.mainFrame().url()
+
+#### page.viewport()
+
+* returns: `<Object>`
+  * width `<number>` page width in pixels.
+  * height `<number>` page height in pixels.
+  * deviceScaleFactor `<number>` Specify device scale factor (can be though of as dpr). Defaults to 1.
+  * isMobile `<boolean>` Whether the meta viewport tag is taken into account. Defaults to false.
+  * hasTouch `<boolean>` Specifies if viewport supports touch events. Defaults to false
+  * isLandscape `<boolean>` Specifies if viewport is in landscape mode. Defaults to false.
+
+#### page.waitFor(selectorOrFunctionOrTimeout[, options[, ...args]])
+
+* selectorOrFunctionOrTimeout `<string|number|function>` 等待的选择器, string 或者 延时
+* options `<Object>` 等待的参数
+* ...args `<...Serializable>` pageFunction 的参数
+* returns: `<Promise>`
+
+该方法的行为根据参数不同有所不同
+* 如果selectorOrFunctionOrTimeout是一个string，那么第一个参数被视为一个选择器等待，该方法是一个page.waitForSelector
+* 如果selectorOrFunctionOrTimeout是一个function, 那么视为等待函数返回, 相当于调用 page.waitForFunction().
+* 如果selectorOrFunctionOrTimeout是一个number, 那么返回一个在number毫秒后调用resolve的Promise
+
+Shortcut for page.mainFrame().waitFor(selectorOrFunctionOrTimeout[, options[, ...args]]).
+
+#### page.waitForFunction(pageFunction[, options[, ...args]])
+
+* pageFunction `<function|string>` 在页面上下文中调用的function
+* options `<Object>`
+  * polling `<string|number>` 如果值是number 那么表示该函数的执行间隔, 如果是string则有以下选项, 默认 raf
+    * raf 不断执行pageFunction的requestAnimationFrame回调, 这是观察dom变化的重要方法
+    * mutation dom变化时执行function
+  * timeout `<number>` 执行的等待时间, 默认30000 (30s)
+* returns: `<Promise>` 当pageFunction返回一个真值时resolve
+
+waitForFunction 可以用于观察视口(viewport)变化
+```
+const puppeteer = require('puppeteer');
+
+puppeteer.launch().then(async browser => {
+  const page = await browser.newPage();
+  const watchDog = page.waitForFunction('window.innerWidth < 100');
+  page.setViewport({width: 50, height: 50});
+  await watchDog;
+  await browser.close();
+});
+```
+
+#### page.waitForNavigation(options)
+
+* options `<Object>` 跳转携带参数
+  * timeout `<number>` 最多的跳转时间单位毫秒, 默认30s, 通过0禁止超时
+  * waitUntil `<string|Array<string>>` 同上
+    * load load事件触发时
+    * domcontentloaded DOMContentLoaded事件触发时
+    * networkidle0 网络连接不超过0时 至少500ms
+    * networkidle2 网络连接不超过2时 至少500ms
+* returns `<Promise<Response>>` 同上
+
+#### page.waitForSelector(selector[,options])
+
+* selector `<string>`
+* options `<Object>`
+  * visiable `<boolean>` 等待dom元素在页面中可见, 比如没有display: none和visibility: hidden属性 默认false
+  * hidden `<boolean>` 等待dom元素在页面中 不 可见, 有上方属性, 默认false
+  * timeout `<number>` 最多等待时间, 默认30000 (30s)
+* returns: `<Promise>` 当选择器所选元素加入dom时resolve
+
+等待元素加入dom, 如果元素存在于dom则立即返回, 到达时间则抛出错误
+```
+const puppeteer = require('puppeteer');
+
+puppeteer.launch().then(async browser => {
+  const page = await browser.newPage();
+  let currentURL;
+  page
+    .waitForSelector('img')
+    .then(() => console.log('First URL with image: ' + currentURL));
+  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com'])
+    await page.goto(currentURL);
+  await browser.close();
+});
+```
+
+#### page.xpath(expression)
+
+* expression `<string>` 表达式
+* returns: `<Promise<?ElementHandle>>` 返回表达式指向页面元素的ElementHandle
+
+该方法会调用表达式,如果页面中没有这样的元素, 则resolve null
 
 
 
