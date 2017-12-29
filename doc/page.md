@@ -100,7 +100,7 @@ page.$$eval(selector, pageFunction[, ...args])
 
 ```const divsCounts = await page.$$eval('div', divs => divs.length);```
 
-此方法会调用document
+此方法会调用document.querySelectorAll然后将返回值传入pageFunction
 
 如果pageFunction 返回一个promise 那么page.$$eval 会等待promise 调用resolve 并返回resolve的值
 
